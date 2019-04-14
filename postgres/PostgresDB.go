@@ -28,8 +28,6 @@ func NewDBConnection() *DB {
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, pass, dbName)
 
-	log.Printf("psqlInfo: %s \n", psqlInfo)
-
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
@@ -55,9 +53,6 @@ func (db *DB) CloseConnection() {
 
 // CreateDriftMigrationsTable creates the migrations table
 func (db *DB) CreateDriftMigrationsTable() (success bool) {
-
-	log.Println("Creating drift_migrations table...")
-
 	exec := `
 		CREATE TABLE "drift_migrations" (
 		"id" uuid NOT NULL,
@@ -66,9 +61,6 @@ func (db *DB) CreateDriftMigrationsTable() (success bool) {
 		"applied" date NOT NULL
 		);
 	`
-
-	log.Println(exec)
-
 	_, err := db.db.Exec(exec)
 
 	if err == nil {
@@ -88,8 +80,6 @@ func (db *DB) CheckForDriftMigrationsTable() (exists bool) {
 		AND table_name = 'drift_migrations'
 		LIMIT 1;
 	`
-
-	log.Println(query)
 
 	var tableName string
 	row := db.db.QueryRow(query)
