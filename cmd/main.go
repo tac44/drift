@@ -12,6 +12,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
+// AppDB represents the db to apply migrations to
 type AppDB struct {
 	ctx context.Context
 	db  *sql.DB
@@ -51,31 +52,40 @@ func main() {
 
 	log.Println("Connected to drift!")
 
-	message, err := database.checkForDriftMigrationsTable()
-	if err != nil {
-		if err != sql.ErrNoRows {
-			panic(err)
-		}
+	err = database.checkForDriftMigrationsTable()
+	if err != nil && err != sql.ErrNoRows {
+		panic(err)
 	}
-
-	log.Println(message)
 
 	if err == sql.ErrNoRows {
-		message, err = database.createDriftMigrationsTable()
+		err = database.createDriftMigrationsTable()
 		if err != nil {
-			panic(err)
+			log.Fatal(err)
 		}
+	}
+}
 
-		log.Println(message)
+func (db *AppDB) createDriftMigrationsTable() (err error) {
+
+	log.Println("Creating drift_migrations table...")
+
+	_, err = db.db.Exec(`
+		CREATE TABLE "drift_migrations" (
+		"id" uuid NOT NULL,
+		"sequence" integer NOT NULL,
+		"description" character varying(255) NOT NULL,
+		"applied" date NOT NULL
+		);
+	`)
+
+	if err != nil {
+		log.Println("Created drift_migrations table!")
 	}
 
+	return err
 }
 
-func (db *AppDB) createDriftMigrationsTable() (message string, err error) {
-	return "Creating drift_migrations table...", nil
-}
-
-func (db *AppDB) checkForDriftMigrationsTable() (message string, err error) {
+func (db *AppDB) checkForDriftMigrationsTable() (err error) {
 	query := `
 
 		SELECT table_name
@@ -86,14 +96,15 @@ func (db *AppDB) checkForDriftMigrationsTable() (message string, err error) {
 	`
 
 	log.Println(query)
+
 	var tableName string
 	err = db.db.QueryRow(query).Scan(&tableName)
-	if err == nil {
-		message = "drift_migrations table exists!"
-	}
-	if err == sql.ErrNoRows {
-		message = "drift_migrations table doesn't exist for database drift!"
+	switch err {
+	case sql.ErrNoRows:
+		log.Println("drift_migrations table doesn't exist for database drift!")
+	default:
+		log.Println("drift_migrations table exists!")
 	}
 
-	return message, err
+	return err
 }

@@ -18,4 +18,4 @@ clean:
 		rm -f ./dist/$(BINARY_NAME)
 run:
 		$(GOBUILD) -o ./dist/$(BINARY_NAME) -v ./cmd
-		./dist/$(BINARY_NAME)
+		./dist/$(BINARY_NAME) up
