@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 
 	// Blank import necessary to use specify postgres drivers
@@ -18,7 +17,7 @@ type DB struct {
 }
 
 // NewDBConnection returns a new DB connection
-func NewDBConnection() *DB {
+func NewDBConnection() (*DB, error) {
 	host, _ := os.LookupEnv("DRIFT_PG_HOST")
 	port, _ := os.LookupEnv("DRIFT_PG_PORT")
 	user, _ := os.LookupEnv("DRIFT_PG_USER")
@@ -30,12 +29,12 @@ func NewDBConnection() *DB {
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	err = db.Ping()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	database := DB{
@@ -43,16 +42,20 @@ func NewDBConnection() *DB {
 		db:  db,
 	}
 
-	return &database
+	return &database, nil
 }
 
 // CloseConnection will close the connection to the database
-func (db *DB) CloseConnection() {
-	db.db.Close()
+func (db *DB) CloseConnection() error {
+	err := db.db.Close()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // CreateDriftMigrationsTable creates the migrations table
-func (db *DB) CreateDriftMigrationsTable() (success bool) {
+func (db *DB) CreateDriftMigrationsTable() error {
 	exec := `
 		CREATE TABLE "drift_migrations" (
 		"id" uuid NOT NULL,
@@ -62,17 +65,15 @@ func (db *DB) CreateDriftMigrationsTable() (success bool) {
 		);
 	`
 	_, err := db.db.Exec(exec)
-
-	if err == nil {
-		success = true
-		log.Println("Created drift_migrations table!")
+	if err != nil {
+		return err
 	}
 
-	return success
+	return nil
 }
 
 // CheckForDriftMigrationsTable checks for the drift migrations table
-func (db *DB) CheckForDriftMigrationsTable() (exists bool) {
+func (db *DB) CheckForDriftMigrationsTable() (bool, error) {
 	query := `
 		SELECT table_name
 		FROM information_schema.tables
@@ -86,16 +87,14 @@ func (db *DB) CheckForDriftMigrationsTable() (exists bool) {
 
 	err := row.Scan(&tableName)
 	if err != nil && err != sql.ErrNoRows {
-		log.Fatal(err)
+		return false, err
 	}
 
 	if row != nil {
-		exists = true
 		if err == sql.ErrNoRows {
-			exists = false
-			log.Println("drift_migrations table doesn't exist for database drift!")
+			return false, nil
 		}
 	}
 
-	return exists
+	return true, nil
 }
