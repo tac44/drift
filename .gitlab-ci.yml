@@ -32,4 +32,4 @@ compile:
       - make build
     artifacts:
       paths:
-        - drift
+        - ./dist/drift
