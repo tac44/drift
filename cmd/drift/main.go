@@ -1,11 +1,10 @@
 package main
 
 import (
+	"github.com/tomcase/drift"
+	"github.com/tomcase/drift/environment"
+	"github.com/tomcase/drift/postgres"
 	"log"
-
-	"github.com/tac44/drift"
-	"github.com/tac44/drift/environment"
-	"github.com/tac44/drift/postgres"
 )
 
 func init() {

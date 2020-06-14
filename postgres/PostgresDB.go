@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	// Blank import necessary to use specify postgres drivers
@@ -18,14 +19,10 @@ type DB struct {
 
 // NewDBConnection returns a new DB connection
 func NewDBConnection() (*DB, error) {
-	host, _ := os.LookupEnv("DRIFT_PG_HOST")
-	port, _ := os.LookupEnv("DRIFT_PG_PORT")
-	user, _ := os.LookupEnv("DRIFT_PG_USER")
-	pass, _ := os.LookupEnv("DRIFT_PG_PASS")
-	dbName, _ := os.LookupEnv("DRIFT_PG_DB")
+	connectionString, _ := os.LookupEnv("DRIFT_DB_CONNECTION_STRING")
+	log.Printf("Connections string is: %s", connectionString)
 
-	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, pass, dbName)
+	psqlInfo := fmt.Sprintf("%s", connectionString)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
